@@ -1,0 +1,83 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Service {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  status      Status   @default(OPERATIONAL)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  incidents   Incident[]
+  statusHistory StatusHistory[]
+}
+
+model Incident {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  status      IncidentStatus @default(INVESTIGATING)
+  impact      Impact    @default(NONE)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  resolvedAt  DateTime?
+  serviceId   String
+  service     Service  @relation(fields: [serviceId], references: [id])
+  updates     IncidentUpdate[]
+}
+
+model IncidentUpdate {
+  id          String   @id @default(cuid())
+  message     String
+  status      IncidentStatus
+  createdAt   DateTime @default(now())
+  incidentId  String
+  incident    Incident @relation(fields: [incidentId], references: [id])
+}
+
+model StatusHistory {
+  id        String   @id @default(cuid())
+  status    Status
+  createdAt DateTime @default(now())
+  serviceId String
+  service   Service  @relation(fields: [serviceId], references: [id])
+}
+
+model Subscriber {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  verified  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum Status {
+  OPERATIONAL
+  DEGRADED_PERFORMANCE
+  PARTIAL_OUTAGE
+  MAJOR_OUTAGE
+  MAINTENANCE
+}
+
+enum IncidentStatus {
+  INVESTIGATING
+  IDENTIFIED
+  MONITORING
+  RESOLVED
+}
+
+enum Impact {
+  NONE
+  MINOR
+  MAJOR
+  CRITICAL
+} 
